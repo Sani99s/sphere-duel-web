@@ -1,7 +1,8 @@
-import { SphereDuelGame } from './game.js';
+import { SphereDuelGame, getSavedWallet, clearSavedWallet } from './game.js';
 
 const app = document.getElementById('app');
 const game = new SphereDuelGame();
+let showImport = false;
 
 const ICONS = {
   rock: `<svg viewBox="0 0 48 48"><path d="M14 28c-1-6 2-11 6-13 1-3 4-5 7-4 3-1 6 1 7 4 4 1 7 6 6 13 0 6-6 10-13 10s-13-4-13-10Z"/></svg>`,
@@ -88,6 +89,7 @@ function render(state) {
       el('p', { class: 'hint' }, `Playing as @${state.handle}. Waiting for another builder to join...`)
     );
     card.appendChild(el('div', {}, [el('span', { class: 'spinner' }), 'Searching the queue']));
+    card.appendChild(waitingList(state));
     if (state.freshMnemonic) card.appendChild(mnemonicBox(state.freshMnemonic));
     return;
   }
@@ -120,18 +122,95 @@ function render(state) {
   app.appendChild(footer(state));
 }
 
+function waitingList(state) {
+  const others = state.queuedPlayers || [];
+  const position = state.queuePosition;
+
+  const box = el('div', { class: 'queue-box' });
+
+  if (position) {
+    box.appendChild(
+      el(
+        'p',
+        { class: 'queue-position' },
+        position === 1 ? "You're first in line" : `You're #${position} in line`
+      )
+    );
+  }
+
+  if (others.length > 0) {
+    box.appendChild(el('p', { class: 'hint' }, 'Also waiting:'));
+    const list = el('div', { class: 'queue-list' });
+    for (const name of others) {
+      list.appendChild(el('span', { class: 'queue-chip' }, `@${name}`));
+    }
+    box.appendChild(list);
+  }
+
+  return box;
+}
+
 function mnemonicBox(mnemonic) {
   return el('div', { class: 'mnemonic-box' }, [
-    el('span', { class: 'warn' }, 'New wallet created — save this recovery phrase, it will not be shown again:'),
+    el('span', { class: 'warn' }, "New wallet created and saved in this browser. Write this down too — it's the only way to recover it on another device:"),
     mnemonic,
   ]);
 }
 
 function renderSetup(card, state) {
+  const saved = getSavedWallet();
+  const busy = state.stage === 'connecting-wallet';
+
+  if (saved && !showImport) {
+    card.appendChild(el('h2', {}, `Welcome back, @${saved.nametag}`));
+    card.appendChild(
+      el('p', { class: 'hint' }, 'Continue with your saved testnet wallet, or switch to a different one.')
+    );
+
+    const continueBtn = el(
+      'button',
+      {
+        class: 'primary',
+        onClick: () => game.connectWallet(saved.nametag, saved.mnemonic),
+      },
+      busy ? 'Opening wallet…' : `Continue as @${saved.nametag}`
+    );
+    if (busy) continueBtn.disabled = true;
+    card.appendChild(continueBtn);
+
+    card.appendChild(
+      el(
+        'button',
+        {
+          class: 'ghost',
+          onClick: () => {
+            clearSavedWallet();
+            render(state);
+          },
+        },
+        'Use a different wallet'
+      )
+    );
+    return;
+  }
+
   card.appendChild(el('h2', {}, 'Enter the vault'));
   card.appendChild(
-    el('p', { class: 'hint' }, 'Pick a Unicity ID for this session. A testnet wallet is created for you automatically.')
+    el(
+      'p',
+      { class: 'hint' },
+      'Connect the Sphere wallet you already use, or spin up a throwaway testnet wallet for this session.'
+    )
   );
+
+  const connectBtn = el(
+    'button',
+    { class: 'primary', onClick: () => game.connectExistingWallet() },
+    busy ? 'Connecting…' : 'Connect Sphere Wallet'
+  );
+  if (busy) connectBtn.disabled = true;
+  card.appendChild(connectBtn);
+  card.appendChild(el('p', { class: 'or-divider' }, 'or use a test wallet'));
 
   card.appendChild(el('label', {}, 'Unicity ID'));
   const wrap = el('div', { class: 'nametag-input' });
@@ -140,20 +219,45 @@ function renderSetup(card, state) {
   wrap.appendChild(input);
   card.appendChild(wrap);
 
-  const busy = state.stage === 'connecting-wallet';
+  let mnemonicInput = null;
+  if (showImport) {
+    card.appendChild(el('label', {}, 'Recovery phrase'));
+    mnemonicInput = el('textarea', {
+      class: 'mnemonic-input',
+      rows: '2',
+      placeholder: 'twelve word recovery phrase',
+    });
+    card.appendChild(mnemonicInput);
+  }
+
   const button = el(
     'button',
     {
       class: 'primary',
       onClick: () => {
         const nametag = input.value.trim().toLowerCase();
-        if (nametag) game.connectWallet(nametag);
+        const mnemonic = mnemonicInput ? mnemonicInput.value.trim() : undefined;
+        if (nametag) game.connectWallet(nametag, mnemonic || undefined);
       },
     },
     busy ? 'Opening wallet…' : 'Enter'
   );
   if (busy) button.disabled = true;
   card.appendChild(button);
+
+  card.appendChild(
+    el(
+      'button',
+      {
+        class: 'ghost',
+        onClick: () => {
+          showImport = !showImport;
+          render(state);
+        },
+      },
+      showImport ? 'Generate a new wallet instead' : 'I already have a recovery phrase'
+    )
+  );
 }
 
 function renderStaking(card, state) {
