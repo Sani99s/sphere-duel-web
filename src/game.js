@@ -2,6 +2,7 @@ import { Sphere, getCoinIdBySymbol } from '@unicitylabs/sphere-sdk';
 import { createBrowserProviders } from '@unicitylabs/sphere-sdk/impl/browser';
 import { createWalletApiProviders } from '@unicitylabs/sphere-sdk/impl/shared/wallet-api';
 import { autoConnect } from '@unicitylabs/sphere-sdk/connect/browser';
+import { SPHERE_NETWORKS } from '@unicitylabs/sphere-sdk/connect';
 import { generateSalt, hashMove, isValidMove } from './commitReveal.js';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'ws://localhost:8787';
@@ -99,7 +100,7 @@ export class SphereDuelGame {
           url: location.origin,
         },
         walletUrl: SPHERE_WALLET_URL,
-        network: { id: 4, name: 'testnet2' },
+        network: SPHERE_NETWORKS.testnet2,
       });
 
       const handle = connection.identity.nametag;
@@ -111,17 +112,44 @@ export class SphereDuelGame {
 
       this.connectClient = client;
       this.walletMode = 'connect';
-      this._set({ handle });
+      this._set({ handle, stage: 'signing-in' });
+
+      // Proves the player actually controls this wallet (not just that a
+      // wallet happened to be open) before letting them into a match —
+      // same "Sign in to..." step quest.unicity.network uses.
+      await client.intent('sign_message', {
+        message: `Sign in to Sphere Duel\n\nNametag: @${handle}\nIssued At: ${new Date().toISOString()}`,
+      });
 
       client.on('transfer:incoming', () => {
         this._refreshConnectBalance();
       });
-      this._refreshConnectBalance();
+      await this._refreshConnectBalance();
+      await this._ensureConnectFunded();
 
       this._connectSignalling(handle);
     } catch (err) {
       this._set({ stage: 'error', error: `Couldn't connect to your Sphere wallet: ${err.message || err}` });
     }
+  }
+
+  /**
+   * If the connected wallet is short on UCT, fires a 'mint' intent so the
+   * player approves a self-mint in their own wallet UI — mirrors the
+   * automatic self-mint the local test-wallet mode does silently, except
+   * here the player has to approve it (as they should, for a real wallet).
+   */
+  async _ensureConnectFunded() {
+    const assets = (await this.connectClient.query('sphere_getBalance')) || [];
+    const existing = assets.find((a) => a.symbol?.toLowerCase() === STAKE_COIN_FALLBACK.toLowerCase());
+    const current = existing ? BigInt(existing.totalAmount) : 0n;
+    if (current >= BigInt(MIN_BALANCE)) return;
+
+    await this.connectClient.intent('mint', {
+      coinId: STAKE_COIN_FALLBACK,
+      amount: (BigInt(MIN_BALANCE) * 10n).toString(),
+    });
+    await this._refreshConnectBalance();
   }
 
   async _refreshConnectBalance() {
