@@ -134,6 +134,25 @@ export class SphereDuelGame {
   }
 
   /** Sends a payment through whichever wallet mode is active. */
+  async _resolveConnectCoinId(coinIdOrSymbol) {
+    if (/^[0-9a-f]+$/i.test(coinIdOrSymbol) && coinIdOrSymbol.length % 2 === 0 && coinIdOrSymbol.length >= 8) {
+      return coinIdOrSymbol.toLowerCase();
+    }
+    // The Connect-mode client never runs createBrowserProviders, so the
+    // local TokenRegistry (which getCoinIdBySymbol reads from) is never
+    // configured and returns undefined. The wallet's own balance response
+    // includes both the resolved hex coinId and the symbol per asset, so
+    // look it up there instead — confirmed against the SDK's Asset type.
+    const assets = await this.connectClient.query('sphere_getBalance');
+    const match = (assets || []).find(
+      (a) => a.symbol?.toLowerCase() === coinIdOrSymbol.toLowerCase()
+    );
+    if (!match) {
+      throw new Error(`Couldn't resolve coin "${coinIdOrSymbol}" — wallet has no balance/definition for it`);
+    }
+    return match.coinId;
+  }
+
   async _send({ recipient, coinId, amount }) {
     if (this.walletMode === 'connect') {
       // The hosted wallet's send intent validates a 'to' field, not
@@ -141,7 +160,8 @@ export class SphereDuelGame {
       // error from an actual Connect session. The direct in-browser SDK
       // (local wallet mode, below) genuinely does use 'recipient' — this
       // naming differs between the two APIs.
-      return this.connectClient.intent('send', { to: recipient, coinId, amount });
+      const hexCoinId = await this._resolveConnectCoinId(coinId);
+      return this.connectClient.intent('send', { to: recipient, coinId: hexCoinId, amount });
     }
     return this.sphere.payments.send({ recipient, coinId, amount });
   }
