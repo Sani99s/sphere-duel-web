@@ -78,7 +78,7 @@ function render(state) {
     return;
   }
 
-  if (state.stage === 'setup' || state.stage === 'connecting-wallet') {
+  if (state.stage === 'setup' || state.stage === 'connecting-wallet' || state.stage === 'signing-in') {
     renderSetup(card, state);
     return;
   }
@@ -159,7 +159,8 @@ function mnemonicBox(mnemonic) {
 
 function renderSetup(card, state) {
   const saved = getSavedWallet();
-  const busy = state.stage === 'connecting-wallet';
+  const busy = state.stage === 'connecting-wallet' || state.stage === 'signing-in';
+  const busyLabel = state.stage === 'signing-in' ? 'Confirm the sign-in in your wallet…' : 'Opening wallet…';
 
   if (saved && !showImport) {
     card.appendChild(el('h2', {}, `Welcome back, @${saved.nametag}`));
@@ -173,7 +174,7 @@ function renderSetup(card, state) {
         class: 'primary',
         onClick: () => game.connectWallet(saved.nametag, saved.mnemonic),
       },
-      busy ? 'Opening wallet…' : `Continue as @${saved.nametag}`
+      busy ? busyLabel : `Continue as @${saved.nametag}`
     );
     if (busy) continueBtn.disabled = true;
     card.appendChild(continueBtn);
@@ -206,7 +207,7 @@ function renderSetup(card, state) {
   const connectBtn = el(
     'button',
     { class: 'primary', onClick: () => game.connectExistingWallet() },
-    busy ? 'Connecting…' : 'Connect Sphere Wallet'
+    busy ? busyLabel : 'Connect Sphere Wallet'
   );
   if (busy) connectBtn.disabled = true;
   card.appendChild(connectBtn);
