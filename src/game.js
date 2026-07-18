@@ -134,11 +134,16 @@ export class SphereDuelGame {
   }
 
   /** Sends a payment through whichever wallet mode is active. */
-  async _send(payment) {
+  async _send({ recipient, coinId, amount }) {
     if (this.walletMode === 'connect') {
-      return this.connectClient.intent('send', payment);
+      // The hosted wallet's send intent validates a 'to' field, not
+      // 'recipient' — confirmed by a live "Missing or invalid \"to\""
+      // error from an actual Connect session. The direct in-browser SDK
+      // (local wallet mode, below) genuinely does use 'recipient' — this
+      // naming differs between the two APIs.
+      return this.connectClient.intent('send', { to: recipient, coinId, amount });
     }
-    return this.sphere.payments.send(payment);
+    return this.sphere.payments.send({ recipient, coinId, amount });
   }
 
 
