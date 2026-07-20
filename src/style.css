@@ -149,6 +149,11 @@ h1.title {
   flex: 1;
 }
 
+.card.stats-card {
+  margin-top: 20px;
+  flex: none;
+}
+
 .card h2 {
   font-family: var(--font-display);
   font-weight: 600;
@@ -160,6 +165,67 @@ h1.title {
   color: var(--paper-dim);
   font-size: 14px;
   margin: 0 0 24px;
+}
+
+/* ---------- stats & leaderboard tables ---------- */
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+.stats-table td,
+.stats-table th {
+  padding: 9px 4px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.stats-table .stat-label {
+  color: var(--paper-dim);
+}
+
+.stats-table .stat-value {
+  font-family: var(--font-mono);
+  color: var(--paper);
+  text-align: right;
+}
+
+.leaderboard-heading {
+  margin-top: 4px;
+}
+
+.leaderboard-table th {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--paper-dim);
+  font-weight: 400;
+}
+
+.leaderboard-table td {
+  font-family: var(--font-mono);
+  color: var(--paper);
+}
+
+.leaderboard-table td:first-child {
+  color: var(--paper-dim);
+  width: 24px;
+}
+
+.leaderboard-table tr.me {
+  background: rgba(255, 133, 56, 0.08);
+}
+
+.leaderboard-table tr.me td {
+  color: var(--brass-bright);
+}
+
+.leaderboard-table tr:last-child td {
+  border-bottom: none;
 }
 
 /* ---------- form controls ---------- */
