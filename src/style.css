@@ -1,15 +1,15 @@
 :root {
-  --ink: #0e1420;
-  --ink-2: #161d2c;
-  --ink-3: #1f2941;
-  --paper: #ede9df;
-  --paper-dim: #9a978c;
-  --brass: #c9a227;
-  --brass-bright: #e6c158;
-  --seal: #8c3b33;
-  --seal-bright: #b6564b;
+  --ink: #0a0a0a;
+  --ink-2: #161616;
+  --ink-3: #202020;
+  --paper: #f5f1ea;
+  --paper-dim: #8f8a80;
+  --brass: #ff8538;
+  --brass-bright: #ffa15e;
+  --seal: #f64c4c;
+  --seal-bright: #ff6b63;
   --verify: #5da688;
-  --line: #2a3344;
+  --line: #2b2b2b;
 
   --font-display: 'Fraunces', serif;
   --font-body: 'IBM Plex Sans', sans-serif;
@@ -28,7 +28,7 @@ body {
 
 body {
   background: var(--ink);
-  background-image: radial-gradient(circle at 50% -10%, #1a2338 0%, var(--ink) 55%);
+  background-image: radial-gradient(circle at 50% -10%, #241408 0%, var(--ink) 55%);
   color: var(--paper);
   font-family: var(--font-body);
   font-size: 16px;
@@ -56,12 +56,26 @@ body {
   margin: 0 0 10px;
 }
 
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 6px;
+}
+
+.logo-mark {
+  width: 34px;
+  height: auto;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 8px rgba(255, 133, 56, 0.35));
+}
+
 h1.title {
   font-family: var(--font-display);
   font-weight: 600;
   font-size: 40px;
   letter-spacing: -0.01em;
-  margin: 0 0 6px;
+  margin: 0;
   color: var(--paper);
 }
 
