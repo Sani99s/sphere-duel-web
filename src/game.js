@@ -329,6 +329,13 @@ export class SphereDuelGame {
         this._set({ stage: 'result', outcome: msg.outcome });
         break;
 
+      case 'cancelled':
+        this._set({
+          stage: 'cancelled',
+          cancelReason: msg.reason,
+        });
+        break;
+
       default:
         break;
     }
@@ -368,6 +375,7 @@ export class SphereDuelGame {
       outcome: null,
       queuedPlayers: null,
       queuePosition: null,
+      cancelReason: null,
     });
     this._connectSignalling(handle);
   }
