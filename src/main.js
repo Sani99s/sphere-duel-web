@@ -93,6 +93,7 @@ function render(state) {
     card.appendChild(el('div', {}, [el('span', { class: 'spinner' }), 'Searching the queue']));
     card.appendChild(waitingList(state));
     if (state.freshMnemonic) card.appendChild(mnemonicBox(state.freshMnemonic));
+    app.appendChild(statsCard(state));
     return;
   }
 
@@ -155,6 +156,66 @@ function waitingList(state) {
   }
 
   return box;
+}
+
+function statsCard(state) {
+  const card = el('div', { class: 'card stats-card' });
+
+  card.appendChild(el('h2', {}, 'Your record'));
+  const my = state.myStats;
+  if (my) {
+    const table = el('table', { class: 'stats-table' });
+    table.appendChild(
+      el('tbody', {}, [
+        statRow('Wins', my.wins),
+        statRow('Losses', my.losses),
+        statRow('Draws', my.draws),
+        statRow('Rank', my.rank ? `#${my.rank} of ${my.totalPlayers}` : 'Unranked — play a match'),
+      ])
+    );
+    card.appendChild(table);
+  } else {
+    card.appendChild(el('p', { class: 'hint' }, 'Loading…'));
+  }
+
+  card.appendChild(el('h2', { class: 'leaderboard-heading' }, 'Leaderboard'));
+  const top = state.leaderboardTop || [];
+  if (top.length === 0) {
+    card.appendChild(el('p', { class: 'hint' }, 'No finished matches yet — be the first.'));
+  } else {
+    const table = el('table', { class: 'stats-table leaderboard-table' });
+    const head = el('thead', {}, [
+      el('tr', {}, [
+        el('th', {}, '#'),
+        el('th', {}, 'Player'),
+        el('th', {}, 'W'),
+        el('th', {}, 'L'),
+        el('th', {}, 'D'),
+      ]),
+    ]);
+    table.appendChild(head);
+    const body = el('tbody', {});
+    top.forEach((p, i) => {
+      const isMe = p.nametag === state.handle;
+      body.appendChild(
+        el('tr', { class: isMe ? 'me' : '' }, [
+          el('td', {}, String(i + 1)),
+          el('td', {}, `@${p.nametag}`),
+          el('td', {}, String(p.wins)),
+          el('td', {}, String(p.losses)),
+          el('td', {}, String(p.draws)),
+        ])
+      );
+    });
+    table.appendChild(body);
+    card.appendChild(table);
+  }
+
+  return card;
+}
+
+function statRow(label, value) {
+  return el('tr', {}, [el('td', { class: 'stat-label' }, label), el('td', { class: 'stat-value' }, String(value))]);
 }
 
 function mnemonicBox(mnemonic) {
