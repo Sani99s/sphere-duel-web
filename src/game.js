@@ -288,6 +288,10 @@ export class SphereDuelGame {
         });
         break;
 
+      case 'leaderboard':
+        this._set({ leaderboardTop: msg.top, myStats: msg.you });
+        break;
+
       case 'matched': {
         this._matchId = msg.matchId;
         this._stake = { amount: msg.stakeAmount, coin: msg.stakeCoin, escrow: msg.escrowNametag };
